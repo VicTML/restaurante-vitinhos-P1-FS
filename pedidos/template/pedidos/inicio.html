@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block conteudo %}
+    <h1>Painel do Restaurante</h1>
+
+    <h2>Cardápio (Pratos)</h2>
+    <div class="card" style="background-color: #fff9c4; border-left: 5px solid #FFC107;">
+        <form method="GET" style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" name="q" placeholder="Buscar prato por nome..." value="{{ request.GET.q }}" style="padding: 8px; flex: 1;"> <!-- O value mantém o termo digitado[cite: 7] -->
+            
+            <select name="categoria" style="padding: 8px;">
+                <option value="">Todas as Categorias</option>
+                <option value="Entrada" {% if request.GET.categoria == 'Entrada' %}selected{% endif %}>Entradas</option>
+                <option value="Principal" {% if request.GET.categoria == 'Principal' %}selected{% endif %}>Pratos Principais</option>
+                <option value="Sobremesa" {% if request.GET.categoria == 'Sobremesa' %}selected{% endif %}>Sobremesas</option>
+                <option value="Bebida" {% if request.GET.categoria == 'Bebida' %}selected{% endif %}>Bebidas</option>
+            </select>
+            
+            <button type="submit" class="btn" style="background-color: #FFC107; color: #333;">Filtrar</button>
+            <a href="{% url 'inicio' %}" class="btn" style="background-color: #ccc; color: #333;">Limpar</a>
+        </form>
+    </div>
+
+    <ul style="list-style-type: none; padding: 0;">
+        {% for prato in pratos %}
+            <li class="card" style="padding: 10px; margin-bottom: 5px;">
+                <strong>{{ prato.nome }}</strong> ({{ prato.categoria }}) - R$ {{ prato.preco }}
+            </li>
+        {% empty %}
+            <!-- Mensagem clara se nenhum resultado for encontrado -->
+            <li class="card" style="padding: 10px; border-left-color: gray;">
+                Nenhum prato encontrado com estes filtros. 
+            </li>
+        {% endfor %}
+    </ul>
+    
+    <hr style="border-top: 2px solid #FFC107; margin: 30px 0;">
+
+    <h2>Mesas</h2>
+    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+        {% for mesa in mesas %}
+            <div class="card" style="width: 200px;">
+                <h3>Mesa {{ mesa.numero }}</h3>
+                <p>Capacidade: {{ mesa.capacidade }}</p>
+                {% if mesa.ocupada %}
+                    <p style="color: #D32F2F; font-weight: bold;">🔴 Ocupada</p>
+                {% else %}
+                    <p style="color: #2E7D32; font-weight: bold;">🟢 Livre</p>
+                    <a href="{% url 'abrir_comanda' mesa.id %}" class="btn">Abrir Comanda</a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <hr style="border-top: 2px solid #FFC107; margin: 30px 0;">
+
+    <h2>Comandas Abertas</h2>
+    {% for comanda in comandas_abertas %}
+        <div class="card">
+            <h3>Comanda #{{ comanda.id }} - Mesa {{ comanda.mesa.numero }}</h3>
+            <p>Aberta em: {{ comanda.data_hora|date:"d/m/Y H:i" }}</p>
+            <a href="{% url 'detalhe_comanda' comanda.id %}" class="btn">Gerenciar / Adicionar Itens</a>
+        </div>
+    {% empty %}
+        <p>Nenhuma comanda aberta no momento.</p>
+    {% endfor %}
+{% endblock %}

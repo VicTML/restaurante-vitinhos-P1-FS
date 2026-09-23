@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cardápio Digital P1</title>
+    <style>
+        /* TEMA: Vermelho e Amarelo Claro */
+        body {
+            background-color: #FFFDE7; /* Amarelo Claro */
+            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        nav {
+            background-color: #D32F2F; /* Vermelho Escuro/Vibrante */
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        nav a {
+            color: #FFFDE7;
+            text-decoration: none;
+            margin-right: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        nav a:hover {
+            color: #FFC107; /* Amarelo Mostarda no hover */
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .btn {
+            background-color: #D32F2F;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .btn:hover { background-color: #B71C1C; }
+        .btn-success { background-color: #2E7D32; } /* Verde para fechar conta */
+        .btn-success:hover { background-color: #1B5E20; }
+        
+        .card {
+            background-color: white;
+            border-left: 5px solid #D32F2F;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.05);
+        }
+        h1, h2 { color: #D32F2F; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="{% url 'inicio' %}">🏠 Início</a>
+        <a href="{% url 'criar_prato' %}">🍕 Novo Prato</a>
+        <a href="{% url 'criar_combo' %}">🍔 Novo Combo</a>
+        <a href="{% url 'criar_mesa' %}">🪑 Nova Mesa</a>
+    </nav>
+    
+    <div class="container">
+        {% block conteudo %}{% endblock %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block conteudo %}
+    <h1>Comanda #{{ comanda.id }} (Mesa {{ comanda.mesa.numero }})</h1>
+    
+    <div style="display: flex; gap: 20px;">
+        <!-- Lado Esquerdo: Adicionar Itens -->
+        <div class="card" style="flex: 1;">
+            <h2>Adicionar Pedido</h2>
+            <form method="POST">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn">Adicionar à Comanda</button>
+            </form>
+        </div>
+
+        <!-- Lado Direito: Resumo da Conta -->
+        <div class="card" style="flex: 1; background-color: #fff9c4;">
+            <h2>Consumo Atual</h2>
+            <ul>
+                {% for item in itens %}
+                    <li>
+                        {{ item.quantidade }}x 
+                        {% if item.prato %}{{ item.prato.nome }}{% endif %}
+                        {% if item.combo %}{{ item.combo.nome }}{% endif %}
+                    </li>
+                {% empty %}
+                    <p>Nenhum item adicionado ainda.</p>
+                {% endfor %}
+            </ul>
+            
+            <h3>Total Parcial: R$ {{ total_parcial }}</h3>
+            
+            <a href="{% url 'fechar_conta' comanda.id %}" class="btn btn-success" style="display: block; text-align: center; margin-top: 20px;">
+                💳 FECHAR CONTA
+            </a>
+        </div>
+    </div>
+{% endblock %}

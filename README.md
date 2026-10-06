@@ -32,4 +32,3 @@ Apliquei uma regra de validação no formulário de cadastro de Pratos que imped
 4. Aplique as migrações: `python manage.py makemigrations` e `python manage.py migrate`.
 5. Inicie o servidor: `python manage.py runserver`.
 6. Acesse `http://127.0.0.1:8000/`.
-

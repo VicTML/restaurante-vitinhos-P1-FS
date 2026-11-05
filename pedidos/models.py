@@ -1,8 +1,7 @@
 from django.db import models
+from core.models import DaOrganizacao
 
-# Create your models here.
-
-class Prato(models.Model):
+class Prato(DaOrganizacao):
     CATEGORIAS_CHOICES = [
         ('Entrada', 'Entrada'),
         ('Principal', 'Prato Principal'),
@@ -18,7 +17,7 @@ class Prato(models.Model):
     def __str__(self):
         return self.nome
 
-class Combo(models.Model):
+class Combo(DaOrganizacao):
     nome = models.CharField(max_length=50)
     pratos = models.ManyToManyField(Prato)
     preco = models.DecimalField(max_digits=5, decimal_places=2)
@@ -26,15 +25,24 @@ class Combo(models.Model):
     def __str__(self):
         return self.nome
 
-class Mesa(models.Model):
+class Mesa(DaOrganizacao):
     numero = models.IntegerField()
     capacidade = models.IntegerField()
     ocupada = models.BooleanField(default=False)
 
+    class Meta:
+        # A unicidade do número da mesa agora é por organização!
+        constraints = [
+            models.UniqueConstraint(
+                fields=['organizacao', 'numero'],
+                name='mesa_unica_por_org'
+            )
+        ]
+
     def __str__(self):
         return f"Mesa {self.numero}"
 
-class Comanda(models.Model):
+class Comanda(DaOrganizacao):
     mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE)
     total = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)
     aberta = models.BooleanField(default=True)
@@ -44,6 +52,7 @@ class Comanda(models.Model):
         return f"Comanda {self.id} - Mesa {self.mesa.numero}"
 
 class Item(models.Model):
+    # O Item não herda diretamente de DaOrganizacao pois já está amarrado à Comanda da organização
     comanda = models.ForeignKey(Comanda, on_delete=models.CASCADE)
     prato = models.ForeignKey(Prato, on_delete=models.CASCADE, null=True, blank=True)
     combo = models.ForeignKey(Combo, on_delete=models.CASCADE, null=True, blank=True)

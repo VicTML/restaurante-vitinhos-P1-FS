@@ -9,7 +9,17 @@ from .dashboard import obter_metricas_dashboard
 
 # Função auxiliar sugerida na Aula 14 para centralizar a org do usuário logado
 def org_atual(request):
-    return request.user.perfil.organizacao
+    perfil = getattr(request.user, 'perfil', None)
+    if perfil is not None:
+        return perfil.organizacao
+
+    from core.models import Organizacao, Perfil
+
+    organizacao = Organizacao.objects.order_by('id').first()
+    if organizacao is None:
+        organizacao = Organizacao.objects.create(nome='Organizacao Principal')
+    Perfil.objects.create(usuario=request.user, organizacao=organizacao)
+    return organizacao
 
 @login_required
 def inicio(request):
@@ -128,7 +138,7 @@ def fechar_conta(request, comanda_id):
     return redirect('inicio')
 
 def _comandas_base_filtradas(request):
-    org = request.user.perfil.organizacao
+    org = org_atual(request)
     qs = Comanda.objects.select_related('mesa').filter(organizacao=org)
     qs_filtrado, form_periodo = filtrar_periodo(request, qs, campo_data='data_hora')
     return org, qs_filtrado, form_periodo

@@ -1,34 +1,75 @@
-# 🍽️ Cardápio Digital - Restaurante Vitinho's (P1)
+# 🍽️ Restaurante Vitinho's — Cardápio Digital & Gestão Mini-SaaS (P1 + P2)
 
-Projeto desenvolvido para a disciplina de Laboratório de Programação Full Stack (Engenharia de Software). Este sistema implementa o back-end e front-end de um Cardápio Digital gerenciador de salão usando o framework Django.
+Sistema web full stack desenvolvido em **Django** para a disciplina de **Laboratório de Programação Full Stack** (Engenharia de Software — Universidade de Vassouras).
+
+O projeto nasceu como um MVP de cardápio digital e controle de salão (P1) e evoluiu para uma arquitetura **Mini-SaaS Multi-Organização** (P2), permitindo que diferentes unidades ou restaurantes operem na mesma base de dados com isolamento total, painel gerencial com métricas em tempo real e API REST.
+
+---
 
 ## 🎯 Como o Sistema Funciona no Contexto do Restaurante
-O fluxo do código foi desenhado para espelhar as regras de negócio de um ambiente real de restaurante:
-1. **Gestão do Salão:** As `Mesas` possuem numeração e capacidade. O sistema controla o status de ocupação booleano (Livre/Ocupada).
-2. **Atendimento:** Quando os clientes chegam, o sistema "Abre uma Comanda", vinculando-a àquela `Mesa` específica. A mesa muda automaticamente seu status para "Ocupada".
-3. **Pedidos:** Através do painel da comanda, o usuário adiciona `Itens`. Cada Item faz referência a um `Prato` ou `Combo` cadastrado no banco de dados e registra a quantidade pedida daquele produto.
-4. **Fechamento de Conta:** A view itera sobre os Itens da Comanda ativa, multiplica o preço pela quantidade, atualiza o valor total, "baixa" a comanda e libera a mesa para o próximo cliente.
 
-## ⚙️️ Explicação da Estrutura do Código (Padrão MTV do Django)
-- **Models (`models.py`):** Define o esquema relacional do banco de dados. Utiliza campos como `DecimalField` para valores financeiros e relacionamentos cruciais como `ForeignKey` (ligando as Comandas às Mesas, e os Itens às Comandas/Pratos) e `ManyToManyField` (para agrupar múltiplos pratos em um único Combo).
-- **Views (`views.py`):** Contém a lógica de negócio do restaurante. Processa as requisições, faz o cálculo matemático da conta interagindo com o ORM do Django, processa submissões (`request.POST`) e retorna as telas.
-- **Forms (`forms.py`):** Utiliza `ModelForm` para gerar formulários dinâmicos e aplicar validações no back-end antes de salvar as interações no banco.
-- **Templates (`templates/`):** A interface de usuário (com temática e estilização própria). Utiliza as *template tags* do Django (`{% for %}`, `{% if %}`) para renderizar o salão de mesas, status e o cardápio de forma dinâmica de acordo com o contexto injetado pelas views.
+Cada módulo do código espelha uma operação real do salão e da gerência do restaurante:
 
-## ✨ Features Obrigatórias (P1) e Justificativas de Decisão
+1. **Multi-Unidades (`Organizacao` e `Perfil`):** O sistema suporta múltiplas unidades (ex.: *Matriz* e *Filial Centro*). Cada funcionário ou gerente possui um `Perfil` vinculado a uma única `Organizacao`, garantindo que ninguém veja mesas, pratos ou faturamento de outro restaurante.
+2. **Cardápio e Combos (`Prato` e `Combo`):** O restaurante gerencia pratos individuais por categoria (*Entrada*, *Prato Principal*, *Sobremesa* e *Bebida*) e monta combos promocionais agrupando vários pratos.
+3. **Controle de Salão (`Mesa`):** Cada unidade cadastra suas mesas com numeração única por organização e capacidade de lugares, acompanhando em tempo real se estão **Livres** ou **Ocupadas**.
+4. **Fluxo de Atendimento (`Comanda` e `Item`):**
+   - Ao receber clientes em uma mesa livre, o atendente abre uma `Comanda`, alterando automaticamente o status da mesa para **Ocupada**.
+   - Durante o atendimento, os pedidos entram como `Itens` vinculados à comanda, registrando pratos ou combos e suas quantidades.
+   - No fechamento da conta, o back-end soma os valores de todos os itens, grava o `total` consolidado, encerra a comanda (`aberta=False`) e libera a mesa para o próximo atendimento.
+5. **Gestão e Tomada de Decisão (`Dashboard` e Relatórios):** O gerente acompanha o movimento da unidade por período filtrado, visualizando total de comandas, contas em aberto, faturamento das comandas fechadas, ranking dos pratos mais pedidos, gráfico mensal de movimento e exportação em CSV.
 
-**Feature 1: Busca e Filtro na Listagem**
-Optei por implementar a busca por texto no nome do prato e o filtro por categoria (Entrada, Principal, Sobremesa, Bebida). Essa escolha se justifica porque, em um cenário real de Cardápio Digital, o usuário precisa ter agilidade para encontrar um prato específico pelo nome ou explorar as opções disponíveis filtrando apenas o que deseja comer no momento.
-*Detalhe técnico:* Utilizei `request.GET.get` na view e o objeto `Q()` do Django para permitir combinar a busca de texto e o filtro de categoria na mesma consulta (Desafio Extra).
+---
 
-**Feature 2: Validação Customizada no Formulário**
-Apliquei uma regra de validação no formulário de cadastro de Pratos que impede a inserção de preços menores ou iguais a zero. Isso protege a integridade e a regra de negócio do sistema, evitando que itens com valores negativos ou gratuitos sejam cadastrados e quebrem a lógica financeira do fechamento de contas da comanda.
-*Detalhe técnico:* Sobrescrevi o método de limpeza de dados (`clean_preco` e `clean_numero`) no `forms.py` para levantar exceções `forms.ValidationError` em casos de valores negativos no preço do prato ou na numeração e capacidade das mesas.
+## 🏗️ Arquitetura do Código (Como Cada Arquivo Se Encaixa)
 
-## 🚀 Como Rodar o Projeto Localmente
-1. Clone este repositório.
-2. Ative um ambiente virtual.
-3. Instale o Django (`pip install django`).
-4. Aplique as migrações: `python manage.py makemigrations` e `python manage.py migrate`.
-5. Inicie o servidor: `python manage.py runserver`.
-6. Acesse `http://127.0.0.1:8000/`.
+O projeto é dividido em dois apps principais: **`core`** (estrutura transversal do SaaS) e **`pedidos`** (regras de negócio do restaurante).
+
+### 1. App `core/` (Base Multi-Tenant)
+- **`core/models.py`**:
+  - `Organizacao`: Representa cada unidade/restaurante cliente do sistema.
+  - `DaOrganizacao` (`abstract = True`): Classe base abstrata herdada pelos models de negócio (`Prato`, `Combo`, `Mesa`, `Comanda`), injetando automaticamente a `ForeignKey` de organização sem duplicar código.
+  - `Perfil`: Estende o `User` nativo do Django via `OneToOneField`, amarrando o usuário logado à sua respectiva `Organizacao`.
+- **`core/admin.py`**: Registra `Organizacao` e `Perfil` no Django Admin para cadastro administrativo de unidades e operadores.
+
+### 2. App `pedidos/` (Operação do Restaurante, Dashboard e API)
+- **`pedidos/models.py`**: Define o banco relacional (`Prato`, `Combo`, `Mesa`, `Comanda`, `Item`). Utiliza `DecimalField` para precisão financeira, `ManyToManyField` nos combos e `UniqueConstraint(fields=['organizacao', 'numero'])` nas mesas para que duas unidades diferentes possam ter uma "Mesa 1" sem conflito global.
+- **`pedidos/forms.py`**:
+  - Validações de negócio da P1 (`clean_preco`, `clean_numero`) levantando `forms.ValidationError` contra preços zerados/negativos ou mesas inválidas.
+  - `PeriodoForm` e `filtrar_periodo()`: Valida datas recebidas via `GET` (`inicio` e `fim`) antes de filtrar o ORM, impedindo erros 500 caso parâmetros inválidos sejam digitados na URL.
+- **`pedidos/dashboard.py`**: Isola as consultas analíticas do ORM:
+  - **KPIs (`aggregate` + `Count`/`Sum` com `Q`):** Calcula em uma única consulta total de comandas, abertas, fechadas e faturamento.
+  - **Ranking (`values` + `annotate` + `order_by`):** Lista o Top 5 pratos mais pedidos da unidade no período.
+  - **Série Temporal (`TruncMonth`):** Agrupa comandas e receitas mês a mês em ordem cronológica para alimentar o gráfico.
+  - **Distribuição:** Contabiliza a divisão de pratos por categoria do cardápio.
+- **`pedidos/views.py`**:
+  - Centraliza o isolamento de dados com `org_atual(request)` e `@login_required`.
+  - Protege acessos diretos via URL com `get_object_or_404(..., organizacao=org)` (retornando `404` caso tentem acessar o ID de outra organização).
+  - Implementa busca combinada no cardápio usando objetos `Q()` (nome + categoria), gerenciamento de comandas, renderização do dashboard e exportação de relatório em **CSV** respeitando os mesmos filtros de organização e período.
+  - Evita o problema de consultas **$N+1$** utilizando `select_related('mesa')` e `select_related('prato', 'comanda')` nos relacionamentos `ForeignKey`.
+- **`pedidos/serializers.py`, `pedidos/api_views.py` e `pedidos/api_urls.py`**:
+  - Camada de **API REST** construída com **Django REST Framework (DRF)** sob o prefixo `/api/`, utilizando `ModelSerializer` (com validação de preço) e views genéricas (`ListCreateAPIView` e `RetrieveUpdateDestroyAPIView`) separadas das rotas HTML.
+- **`pedidos/templates/`**:
+  - Interfaces em HTML/CSS com identidade visual temática (vermelho e amarelo claro), utilizando `{% empty %}` para estados vazios e `json_script` + **Chart.js** para renderizar os gráficos do dashboard com segurança.
+
+---
+
+## ✨ Evolução das Entregas (P1 ➔ P2)
+
+| Etapa | Recurso Implementado | Solução Técnica no Django |
+| :--- | :--- | :--- |
+| **P1** | Busca e Filtro no Cardápio | Filtros combinados via `request.GET` e consultas dinâmicas com `Q()` |
+| **P1** | Validação de Integridade | `ModelForm` com métodos `clean_*` bloqueando valores $\le 0$ |
+| **P2** | Multi-Organização (Isolamento) | App `core`, herança `DaOrganizacao`, `UniqueConstraint` por org e `get_object_or_404` |
+| **P2** | Dashboard & Filtros de Período | `aggregate`, `annotate`, `TruncMonth`, `PeriodoForm`, `Chart.js` e exportação CSV |
+| **P2** | Desempenho de Consultas | Uso de `select_related` para eliminar consultas $N+1$ em loops e relatórios |
+| **P2** | API REST | Endpoints JSON em `/api/pratos/` com `PratoSerializer` e DRF Generics |
+
+---
+
+## 🧪 Roteiro de Testes de Isolamento e Dashboard
+
+Para validar o funcionamento multi-tenant e as métricas:
+1. **Isolamento de Dados:** Criar duas organizações no `/admin/` (*Unidade A* e *Unidade B*) e dois usuários com seus respectivos perfis. Cada usuário visualiza apenas suas mesas, pratos e indicadores no `/dashboard/`.
+2. **Proteção de ID na URL:** Tentar abrir `/comanda/<id_da_unidade_b>/` logado na *Unidade A* retorna `404 Not Found`.
+3. **Filtro por Período & Resiliência:** Filtrar datas em `/dashboard/?inicio=2026-01-01&fim=2026-12-31` atualiza os cartões, o gráfico e o arquivo gerado em **Exportar CSV**; parâmetros inválidos (ex.: `?inicio=abc`) são tratados pelo `PeriodoForm` sem quebrar a página.

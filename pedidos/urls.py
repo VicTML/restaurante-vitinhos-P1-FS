@@ -9,4 +9,6 @@ urlpatterns = [
     path('abrir-comanda/<int:mesa_id>/', views.abrir_comanda, name='abrir_comanda'),
     path('comanda/<int:comanda_id>/', views.detalhe_comanda, name='detalhe_comanda'),
     path('fechar-conta/<int:comanda_id>/', views.fechar_conta, name='fechar_conta'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/exportar-csv/', views.exportar_dashboard_csv, name='exportar_dashboard_csv'),
 ]

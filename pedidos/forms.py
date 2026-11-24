@@ -39,3 +39,18 @@ class ItemForm(forms.ModelForm):
     class Meta:
         model = Item
         fields = ['prato', 'combo', 'quantidade']
+
+class PeriodoForm(forms.Form):
+    inicio = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+    fim = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+
+def filtrar_periodo(request, qs, campo_data='data_hora'):
+    form = PeriodoForm(request.GET)
+    if form.is_valid():
+        inicio = form.cleaned_data.get('inicio')
+        fim = form.cleaned_data.get('fim')
+        if inicio:
+            qs = qs.filter(**{f'{campo_data}__date__gte': inicio})
+        if fim:
+            qs = qs.filter(**{f'{campo_data}__date__lte': fim})
+    return qs, form

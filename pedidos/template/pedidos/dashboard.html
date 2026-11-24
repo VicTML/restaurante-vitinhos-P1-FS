@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - {{ organizacao.nome }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #fffde7; color: #222; margin: 20px; }
+        .topo { display: flex; justify-content: space-between; align-items: center; background: #c62828; color: #fff9c4; padding: 15px 20px; border-radius: 8px; }
+        .filtros { background: #fff9c4; border-left: 5px solid #fbc02d; padding: 15px; margin: 20px 0; border-radius: 6px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .card { background: #ffffff; border: 1px solid #ffe082; border-top: 4px solid #d32f2f; border-radius: 8px; padding: 15px; }
+        .card small { color: #666; display: block; }
+        .card strong { font-size: 1.6em; color: #b71c1c; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th, td { padding: 8px 10px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #fff8e1; color: #b71c1c; }
+        .btn { padding: 8px 14px; border-radius: 5px; text-decoration: none; border: none; cursor: pointer; font-weight: bold; }
+        .btn-amarelo { background: #fbc02d; color: #222; }
+        .btn-csv { background: #2e7d32; color: #fff; }
+        .btn-limpar { background: #e0e0e0; color: #222; }
+    </style>
+</head>
+<body>
+    <div class="topo">
+        <div>
+            <h1 style="margin: 0;">Dashboard — {{ organizacao.nome }}</h1>
+            <small>Visão isolada por organização e período</small>
+        </div>
+        <div>
+            <a href="{% url 'exportar_dashboard_csv' %}?inicio={{ request.GET.inicio }}&fim={{ request.GET.fim }}" class="btn btn-csv">Exportar CSV</a>
+        </div>
+    </div>
+
+    <form method="GET" class="filtros">
+        <label>Início: {{ form_periodo.inicio }}</label>
+        <label>Fim: {{ form_periodo.fim }}</label>
+        <button type="submit" class="btn btn-amarelo">Filtrar</button>
+        <a href="{% url 'dashboard' %}" class="btn btn-limpar">Limpar</a>
+    </form>
+
+    <div class="kpis">
+        <div class="card">
+            <small>Total de Comandas</small>
+            <strong>{{ kpis.total_comandas }}</strong>
+        </div>
+        <div class="card">
+            <small>Comandas Abertas</small>
+            <strong>{{ kpis.abertas }}</strong>
+        </div>
+        <div class="card">
+            <small>Comandas Fechadas</small>
+            <strong>{{ kpis.fechadas }}</strong>
+        </div>
+        <div class="card">
+            <small>Faturamento (Fechadas)</small>
+            <strong>R$ {{ kpis.faturamento }}</strong>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <h3>Comandas por Mês</h3>
+            <canvas id="graficoMes"></canvas>
+        </div>
+
+        <div class="card">
+            <h3>Top 5 Pratos Mais Pedidos</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Prato</th>
+                        <th>Qtd.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in ranking_pratos %}
+                    <tr>
+                        <td>{{ item.prato__nome }}</td>
+                        <td>{{ item.quantidade_total }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2">Nenhum item de prato registrado no período.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{ por_mes|json_script:"dados-mes" }}
+    <script>
+        const dadosMes = JSON.parse(document.getElementById('dados-mes').textContent);
+        const ctx = document.getElementById('graficoMes');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: dadosMes.map(item => item.mes),
+                datasets: [{
+                    label: 'Comandas no Mês',
+                    data: dadosMes.map(item => item.total),
+                    backgroundColor: '#d32f2f'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
